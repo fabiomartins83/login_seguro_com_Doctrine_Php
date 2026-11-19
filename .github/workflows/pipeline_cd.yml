@@ -1,5 +1,4 @@
-name: Pipeline CD - Deploy do repositório para servidor de hospedagem AlwaysData
-
+name: Pipeline CD - Deploy do repositorio para servidor de hospedagem AlwaysData
 on:
   workflow_run:
     workflows: ["Pipeline CI - Validar projeto PHP e subir ao repositório Github"] # Deve ser o nome exato definido no 'name:' do seu pipeline_ci.yml
