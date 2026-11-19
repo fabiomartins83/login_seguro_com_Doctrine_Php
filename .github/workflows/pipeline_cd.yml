@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
 
-# Evita dois deploys simultâneos
+# Evita dois deploys simultâneos[cite: 1]
 concurrency:
   group: deploy-alwaysdata
   cancel-in-progress: false
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   deploy-alwaysdata:
     runs-on: ubuntu-latest
-    # Só executa o deploy se o workflow de CI anterior foi concluído com SUCESSO
+    # Só executa o deploy se o workflow de CI anterior foi concluído com SUCESSO[cite: 1]
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
@@ -30,7 +30,7 @@ jobs:
       - name: 1. Baixar código do repositório
         uses: actions/checkout@v4
         with:
-          # Garante o checkout do commit exato validado pelo CI
+          # Garante o checkout do commit exato validado pelo CI[cite: 1]
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: 2. Validar variáveis de ambiente e configurar SSH
@@ -45,7 +45,6 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # Remove eventual CRLF caso a chave tenha sido copiada no Windows
           printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
@@ -61,6 +60,7 @@ jobs:
             BatchMode yes
           EOF
           chmod 600 ~/.ssh/config
+          ls -la ~/.ssh
 
       - name: 3. Validar chave SSH e testar conexão
         run: |
@@ -72,8 +72,9 @@ jobs:
 
       - name: 4. Sincronizar arquivos via rsync (excluindo arquivos de dev/git/dados)
         run: |
+          test -f ~/.ssh/config
           rsync -avz --delete \
-            -e "ssh -F ~/.ssh/config" \
+            -e "ssh" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='tests/' \
