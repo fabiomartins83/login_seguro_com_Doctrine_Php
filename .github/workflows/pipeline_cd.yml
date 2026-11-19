@@ -1,4 +1,4 @@
-name: CD - Deploy do repositório para servidor de hospedagem AlwaysData
+name: Pipeline CD - Deploy do repositório para servidor de hospedagem AlwaysData
 
 on:
   workflow_run:
@@ -30,23 +30,29 @@ jobs:
       - name: 1. Baixar código do repositório
         uses: actions/checkout@v4
         with:
-          # Sem isso, o workflow_run faz checkout da HEAD da branch padrão,
-          # e não necessariamente do commit que o CI validou.
+          # Garante o checkout do commit exato validado pelo CI
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: 2. Configurar chave SSH
+      - name: 2. Validar variáveis de ambiente e configurar SSH
         env:
           SSH_KEY: ${{ secrets.ALWAYSDATA_SSH_KEY }}
-          # Passa a chave por variável de ambiente (mais seguro que interpolar no script)
-          # e remove possíveis CRLF de quem colou o segredo no Windows.
-          # Alias único para rsync e ssh usarem a mesma chave/usuário
         run: |
+          test -n "$HOST"
+          test -n "$SSH_USER"
+          test -n "$TARGET_DIR"
+          test -n "$SSH_KEY"
+
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
+
+          # Remove eventual CRLF caso a chave tenha sido copiada no Windows
           printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
-          cat >> ~/.ssh/config <<EOF
+
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 644 ~/.ssh/known_hosts
+
+          cat > ~/.ssh/config <<EOF
           Host alwaysdata
             HostName $HOST
             User $SSH_USER
@@ -56,26 +62,18 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
-      - name: 3. Validar chave SSH
+      - name: 3. Validar chave SSH e testar conexão
         run: |
           echo "Linhas: $(wc -l < ~/.ssh/id_ed25519)"
           echo "Bytes: $(wc -c < ~/.ssh/id_ed25519)"
           echo "Primeira linha: $(head -n1 ~/.ssh/id_ed25519 | cut -c1-12)"
           ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null && echo "Chave privada válida"
+          ssh alwaysdata "echo Conexao SSH ok em \$(pwd)"
 
-      - name: 4. Testar conexão SSH com AlwaysData
-        env:
-          HOST: ${{ secrets.ALWAYSDATA_HOST }}
-          SSH_USER: ${{ secrets.ALWAYSDATA_USER }}
-        run: |
-          test -n "$HOST" && echo "HOST OK" || echo "HOST VAZIO"
-          test -n "$SSH_USER" && echo "SSH_USER OK" || echo "SSH_USER VAZIO"
-          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "${SSH_USER}@${HOST}" "echo Conexao SSH ok em \$(pwd)"
-
-      - name: 5. Sincronizar arquivos via rsync (excluindo arquivos de dev/git)
+      - name: 4. Sincronizar arquivos via rsync (excluindo arquivos de dev/git/dados)
         run: |
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+            -e "ssh -F ~/.ssh/config" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='tests/' \
@@ -85,6 +83,11 @@ jobs:
             --exclude='.env' \
             ./ "alwaysdata:${TARGET_DIR}"
 
-      - name: 6. Instalar dependências do Composer no servidor
+      - name: 5. Instalar dependências do Composer no servidor
         run: |
-          ssh alwaysdata "cd '${TARGET_DIR}' && composer install --no-dev --optimize-autoloader --no-interaction"
+          ssh alwaysdata "cd '${TARGET_DIR}' && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist"
+
+      - name: 6. Limpar credenciais temporárias SSH
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts
