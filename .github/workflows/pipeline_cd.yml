@@ -63,7 +63,16 @@ jobs:
           echo "Primeira linha: $(head -n1 ~/.ssh/id_ed25519 | cut -c1-12)"
           ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null && echo "Chave privada válida"
 
-      - name: 4. Sincronizar arquivos via rsync (excluindo arquivos de dev/git)
+      - name: 4. Testar conexão SSH com AlwaysData
+        env:
+          HOST: ${{ secrets.ALWAYSDATA_HOST }}
+          SSH_USER: ${{ secrets.ALWAYSDATA_USER }}
+        run: |
+          test -n "$HOST" && echo "HOST OK" || echo "HOST VAZIO"
+          test -n "$SSH_USER" && echo "SSH_USER OK" || echo "SSH_USER VAZIO"
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "${SSH_USER}@${HOST}" "echo Conexao SSH ok em \$(pwd)"
+
+      - name: 5. Sincronizar arquivos via rsync (excluindo arquivos de dev/git)
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
@@ -76,6 +85,6 @@ jobs:
             --exclude='.env' \
             ./ "alwaysdata:${TARGET_DIR}"
 
-      - name: 5. Instalar dependências do Composer no servidor
+      - name: 6. Instalar dependências do Composer no servidor
         run: |
           ssh alwaysdata "cd '${TARGET_DIR}' && composer install --no-dev --optimize-autoloader --no-interaction"
