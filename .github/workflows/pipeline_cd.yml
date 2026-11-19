@@ -70,10 +70,11 @@ jobs:
           ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null && echo "Chave privada válida"
           ssh alwaysdata "echo Conexao SSH ok em \$(pwd)"
 
-      - name: 4. Sincronizar arquivos via rsync (excluindo arquivos de dev/git/dados)
+      - name: 4. Sincronizar arquivos via rsync
         run: |
           test -f ~/.ssh/config
           test -n "$TARGET_DIR"
+          ssh alwaysdata "mkdir -p '${TARGET_DIR}'"
           rsync -avz --delete --omit-dir-times \
             -e "ssh" \
             --exclude='.git/' \
