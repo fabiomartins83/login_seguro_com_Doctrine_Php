@@ -17,8 +17,8 @@ concurrency:
 jobs:
   deploy-alwaysdata:
     runs-on: ubuntu-latest
-    # Só executa o deploy se o workflow de CI anterior foi concluído com SUCESSO
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Só executa o deploy se o CI foi concluído com SUCESSO e foi disparado por um push
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
 
     env:
       HOST: ${{ secrets.ALWAYSDATA_HOST }}
