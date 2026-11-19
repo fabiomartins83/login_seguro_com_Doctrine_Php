@@ -5,6 +5,7 @@ on:
     types:
       - completed
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,13 +18,15 @@ concurrency:
 jobs:
   deploy-alwaysdata:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # Só executa o deploy se o CI foi concluído com SUCESSO e foi disparado por um push
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
 
     env:
       HOST: ${{ secrets.ALWAYSDATA_HOST }}
       SSH_USER: ${{ secrets.ALWAYSDATA_USER }}
       TARGET_DIR: ${{ secrets.ALWAYSDATA_TARGET_DIR }}
+      KNOWN_HOSTS: ${{ secrets.ALWAYSDATA_KNOWN_HOSTS }}
 
     steps:
       - name: 1. Baixar código do repositório
@@ -31,6 +34,7 @@ jobs:
         with:
           # Garante o checkout do commit exato validado pelo CI
           ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
 
       - name: 2. Validar variáveis de ambiente e configurar SSH
         env:
@@ -47,7 +51,8 @@ jobs:
           printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          test -n "$KNOWN_HOSTS"
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
           cat > ~/.ssh/config <<EOF
@@ -57,6 +62,7 @@ jobs:
             IdentityFile ~/.ssh/id_ed25519
             IdentitiesOnly yes
             BatchMode yes
+            StrictHostKeyChecking yes
           EOF
           chmod 600 ~/.ssh/config
           ls -la ~/.ssh
@@ -83,13 +89,22 @@ jobs:
             --exclude='*.sqlite' \
             --exclude='*.db' \
             --exclude='.env' \
+            --exclude='*.md' \
+            --exclude='.gitignore' \
+            --exclude='.DS_Store' \
             ./ "alwaysdata:${TARGET_DIR}"
 
       - name: 5. Instalar dependências do Composer no servidor
         run: |
           ssh alwaysdata "cd '${TARGET_DIR}' && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist"
 
-      - name: 6. Limpar credenciais temporárias SSH
+      - name: 6. Teste de resposta (smoke test) do site após deploy
+        run: |
+          curl -fsS --retry 3 --retry-delay 5 -o /dev/null \
+            -w "HTTP %{http_code}\n" \
+            https://digitalmedia.alwaysdata.net/login_seguro/login.html
+
+      - name: 7. Limpar credenciais temporárias SSH
         if: always()
         run: |
           rm -f ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts
