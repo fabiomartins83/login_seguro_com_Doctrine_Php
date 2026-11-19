@@ -1,8 +1,8 @@
-name: CD - Deploy para AlwaysData
+name: CD - Deploy do repositório para servidor de hospedagem AlwaysData
 
 on:
   workflow_run:
-    workflows: ["CI - Validar Projeto PHP"] # Deve ser o nome exato definido no 'name:' do seu pipeline_ci.yml
+    workflows: ["Pipeline CI - Validar Projeto PHP e subir ao repositório Github"] # Deve ser o nome exato definido no 'name:' do seu pipeline_ci.yml
     types:
       - completed
     branches: [ "main" ]
