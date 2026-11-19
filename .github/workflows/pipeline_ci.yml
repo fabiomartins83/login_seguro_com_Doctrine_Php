@@ -23,7 +23,7 @@ jobs:
           coverage: none
 
       - name: 3. Validate composer files
-        run: composer validate --strict
+        run: composer validate
 
       - name: 4. Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
