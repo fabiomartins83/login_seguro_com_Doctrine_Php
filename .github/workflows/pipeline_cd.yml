@@ -57,7 +57,11 @@ jobs:
           chmod 600 ~/.ssh/config
 
       - name: 3. Validar chave SSH
-        run: ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null && echo "Chave privada válida"
+        run: |
+          echo "Linhas: $(wc -l < ~/.ssh/id_ed25519)"
+          echo "Bytes: $(wc -c < ~/.ssh/id_ed25519)"
+          echo "Primeira linha: $(head -n1 ~/.ssh/id_ed25519 | cut -c1-12)"
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null && echo "Chave privada válida"
 
       - name: 4. Sincronizar arquivos via rsync (excluindo arquivos de dev/git)
         run: |
