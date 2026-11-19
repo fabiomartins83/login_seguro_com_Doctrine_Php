@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 
-# Evita dois deploys simultâneos[cite: 1]
+# Evita dois deploys simultâneos
 concurrency:
   group: deploy-alwaysdata
   cancel-in-progress: false
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   deploy-alwaysdata:
     runs-on: ubuntu-latest
-    # Só executa o deploy se o workflow de CI anterior foi concluído com SUCESSO[cite: 1]
+    # Só executa o deploy se o workflow de CI anterior foi concluído com SUCESSO
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     env:
@@ -29,7 +29,7 @@ jobs:
       - name: 1. Baixar código do repositório
         uses: actions/checkout@v4
         with:
-          # Garante o checkout do commit exato validado pelo CI[cite: 1]
+          # Garante o checkout do commit exato validado pelo CI
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: 2. Validar variáveis de ambiente e configurar SSH
