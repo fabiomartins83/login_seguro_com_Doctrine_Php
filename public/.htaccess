@@ -1,0 +1,17 @@
+# Apache (mod_headers). Com Nginx, replique estes cabeçalhos no bloco "server".
+# Libera esta pasta: o .htaccess da raiz do projeto nega tudo e, sem esta linha,
+# o Apache (XAMPP etc.) responderia 403 também para login.html e login.php.
+Require all granted
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header always set Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+    # Ative quando o site estiver em HTTPS:
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>

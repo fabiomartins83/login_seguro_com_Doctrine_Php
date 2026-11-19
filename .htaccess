@@ -1,0 +1,3 @@
+# Rede de segurança: se o site for apontado por engano para a raiz do projeto,
+# nada (src, vendor, composer.json, banco) é servido. O DocumentRoot correto é public/.
+Require all denied

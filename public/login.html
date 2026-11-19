@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'">
+  <title>Acesso ao sistema</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <main class="cartao">
+    <h1>Acesso ao sistema</h1>
+
+    <div id="mensagem" role="alert" aria-live="polite" hidden></div>
+
+    <!-- method/action explícitos: sem JavaScript a senha nunca iria para a URL (GET) -->
+    <form id="form-login" method="post" action="login.php">
+      <div class="campo">
+        <label for="usuario">Usuário</label>
+        <input id="usuario" name="usuario" type="text" maxlength="100" required autofocus
+               autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" maxlength="100" required
+               autocomplete="current-password">
+      </div>
+
+      <button id="acessar" type="submit">Acessar</button>
+    </form>
+
+    <button id="sair" type="button" hidden>Sair</button>
+
+    <noscript><p class="aviso">Ative o JavaScript para acessar o sistema.</p></noscript>
+  </main>
+
+  <script src="login.js" defer></script>
+</body>
+</html>
