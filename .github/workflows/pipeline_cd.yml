@@ -73,7 +73,8 @@ jobs:
       - name: 4. Sincronizar arquivos via rsync (excluindo arquivos de dev/git/dados)
         run: |
           test -f ~/.ssh/config
-          rsync -avz --delete \
+          test -n "$TARGET_DIR"
+          rsync -avz --delete --omit-dir-times \
             -e "ssh" \
             --exclude='.git/' \
             --exclude='.github/' \
