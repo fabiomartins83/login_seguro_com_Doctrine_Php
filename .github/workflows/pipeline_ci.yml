@@ -1,4 +1,4 @@
-name: CI
+name: CI - Validar Projeto PHP
 
 on:
   push:
@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: 1. Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup PHP and Composer
+      - name: 2. Setup PHP and Composer
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
@@ -22,14 +22,14 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Validate composer files
+      - name: 3. Validate composer files
         run: composer validate --strict
 
-      - name: Install Composer dependencies
+      - name: 4. Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Lint PHP syntax
+      - name: 5. Lint PHP syntax
         run: find src public tests -name "*.php" -print0 | xargs -0 -n1 php -l
 
-      - name: Run unit test script
+      - name: 6. Run unit test script
         run: php tests/teste_unitario.php

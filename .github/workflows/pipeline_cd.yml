@@ -1,0 +1,40 @@
+name: CD - Deploy para AlwaysData
+
+on:
+  workflow_run:
+    workflows: ["CI - Validar Projeto PHP"] # Deve ser o nome exato definido no 'name:' do seu pipeline_ci.yml
+    types:
+      - completed
+    branches: [ "main" ]
+
+jobs:
+  deploy-alwaysdata:
+    runs-on: ubuntu-latest
+    # Só executa o deploy se o workflow de CI anterior foi concluído com SUCESSO
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: 1. Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ALWAYSDATA_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.ALWAYSDATA_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 3. Sincronizar arquivos via rsync (excluindo arquivos de dev/git)
+        run: |
+          rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='tests/' \
+            --exclude='*.sqlite' \
+            --exclude='*.db' \
+            --exclude='.env' \
+            ./ ${{ secrets.ALWAYSDATA_USER }}@${{ secrets.ALWAYSDATA_HOST }}:${{ secrets.ALWAYSDATA_TARGET_DIR }}
+
+      - name: 4. Instalar dependências do Composer no servidor remoto
+        run: |
+          ssh ${{ secrets.ALWAYSDATA_USER }}@${{ secrets.ALWAYSDATA_HOST }} "cd ${{ secrets.ALWAYSDATA_TARGET_DIR }} && composer install --no-dev --optimize-autoloader"
