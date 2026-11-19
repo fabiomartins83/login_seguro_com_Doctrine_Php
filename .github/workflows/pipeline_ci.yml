@@ -1,4 +1,4 @@
-name: Pipeline CI - Validar Projeto PHP e subir ao repositório Github
+name: Pipeline CI - Validar projeto PHP e subir ao repositório Github
 
 on:
   push:
