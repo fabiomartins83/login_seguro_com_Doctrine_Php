@@ -1,3 +1,6 @@
 vendor/
+var/
+*.db
+*.sqlite
 *.zip
 .env
