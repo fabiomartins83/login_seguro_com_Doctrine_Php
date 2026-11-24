@@ -1,3 +1,20 @@
-# Rede de segurança: se o site for apontado por engano para a raiz do projeto,
-# nada (src, vendor, composer.json, banco) é servido. O DocumentRoot correto é public/.
-Require all denied
+# Permite abrir o projeto pela pasta raiz (ex.: http://localhost/login-seguro-doctrine-php/)
+# sem expor nada fora de public/: toda URL é reescrita para dentro de public/.
+# src/, vendor/, tests/, composer.json etc. ficam inalcançáveis (viram 404 no roteador).
+# Em produção o ideal continua sendo apontar o DocumentRoot para public/.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^public/ - [L]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Sem mod_rewrite: rede de segurança, nada é servido a partir da raiz.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
+
+# Nunca servir arquivos .ht* (garantia extra; o Apache já faz isso por padrão em instalações normais)
+<FilesMatch "^\.ht">
+    Require all denied
+</FilesMatch>
